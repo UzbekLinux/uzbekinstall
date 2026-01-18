@@ -366,12 +366,12 @@ cp /etc/os-release /mnt/etc/os-release
 mkdir -p /mnt/usr/local/bin
 cp /usr/local/bin/halal /mnt/usr/local/bin/halal
 cp /usr/local/bin/halalfetch /mnt/usr/local/bin/halalfetch
-cp /usr/local/bin/uzbekinstall /mnt/usr/local/bin/uzbekinstall
 cp /usr/local/bin/uzupdate /mnt/usr/local/bin/uzupdate
+cp /usr/local/bin/sing-box /mnt/usr/local/bin/sing-box
 
 chmod +x /mnt/usr/local/bin/halal
+chmod +x /mnt/usr/local/bin/sing-box
 chmod +x /mnt/usr/local/bin/halalfetch
-chmod +x /mnt/usr/local/bin/uzbekinstall
 chmod +x /mnt/usr/local/bin/uzupdate
 echo 'Da.'
 
