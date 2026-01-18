@@ -349,12 +349,17 @@ arch-chroot /mnt /bin/bash -c "rm /usr/share/wayland-sessions/labwc.desktop"
 echo "Копирование халяль компонентов из LiveCD..."
 cp -r /etc/systemd/network /mnt/etc/systemd/
 ln -sf /run/systemd/resolve/stub-resolv.conf /mnt/etc/resolv.conf
-arch-chroot /mnt /bin/bash -c "pacman -S dhcpcd networkmanager --noconfirm"
 arch-chroot /mnt /bin/bash -c "systemctl enable systemd-resolved"
-arch-chroot /mnt /bin/bash -c "systemctl enable NetworkManager"
 arch-chroot /mnt /bin/bash -c "systemctl enable systemd-networkd.service systemd-resolved.service"
-arch-chroot /mnt /bin/bash -c "curl -sSf https://archlinux.org/ > /dev/null" \
-  || echo -e "\033[41mу вас не будет интернета в системе.\033[0m"
+arch-chroot /mnt /bin/bash -c "systemctl disable dhcpcd"
+arch-chroot /mnt /bin/bash <<'EOF'
+cat > /etc/systemd/resolved.conf <<'EOC'
+[Resolve]
+DNS=1.1.1.1 8.8.8.8
+FallbackDNS=9.9.9.9
+DNSStubListener=yes
+EOC
+EOF
 
 
 cp /etc/os-release /mnt/etc/os-release
