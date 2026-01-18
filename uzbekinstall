@@ -11,7 +11,7 @@ C_BRIGHT_RED="\033[91m"
 
 clear
 echo -e "${C_GREEN}UZBEK LINUX УСТАНОВКА DA.${NO_FORMAT}"
-echo "ВЕРСИЯ v1.6"
+echo "ВЕРСИЯ v1.7"
 echo "----------------------------------------------------------"
 echo
 fdisk -l
