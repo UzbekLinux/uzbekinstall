@@ -213,7 +213,7 @@ arch-chroot /mnt /bin/bash -c "cd /tmp && git clone https://github.com/ZDesktopE
 clear
 arch-chroot /mnt /bin/bash -c "pacman -S --noconfirm sddm"
 arch-chroot /mnt /bin/bash -c "systemctl enable sddm.service"
-esac
+
 clear
 echo "----------------------------------------------------------"
 echo
