@@ -9,64 +9,165 @@ C_WHITE="\033[38;5;15m"
 C_GREEN="\033[38;5;46m"   
 C_BRIGHT_RED="\033[91m"
 
+clear
+echo -e "${C_GREEN}UZBEK LINUX УСТАНОВКА DA.${NO_FORMAT}"
+echo "ВЕРСИЯ v1.7"
+echo "----------------------------------------------------------"
+echo
+fdisk -l
+echo 
+echo "----------------------------------------------------------"
+echo
+echo "Введи как записывать тебе диски будемDa.:"
+echo 
+echo "1) nvme0n1p1 - efi, nvme0n1p2 - root (EFI, root)"
+echo "2) введи диск и мы сделать тебе в 2 раздел (EFI, root)"
+echo "3) введи 2 партитион сам (EFI, root)"
+echo "*) Exit"
+echo "с вашаго выбранного HALAL диска будет всё удалено!!!!!!!!!!"
 
-FS="ext4"
+read fd
 
-source /tmp/uzbekinstall.conf
+clear
+echo "----------------------------------------------------------"
+echo
+echo "Выбери ваш монк фс:"
+echo 
+echo "1) ext4 (супер мега быстрый Da.)"
+echo "2) btrfs (о Da. снапшоты)"
+echo "*) выйти нахуй"
+read fs
+case $fs in
+1)
+ ffs="ext4"
+ ffs2="ext4"
+ ;;
+2)
+ ffs="btrfs -f"
+ ffs2="btrfs"
+ ;;
+*)
+ ffs="ext4"
+ ffs2="ext4"
+ ;;
+esac
+clear
+case $fd in
 
-get_partitions() {
-    local DISK="$1"
-    if [[ "$DISK" =~ nvme ]]; then
-        EFI_PART="${DISK}p1"
-        ROOT_PART="${DISK}p2"
-    else
-        EFI_PART="${DISK}1"
-        ROOT_PART="${DISK}2"
-    fi
-}
+1)
+ efi="/dev/nvme0n1p1"
+ root="/dev/nvme0n1p2"
+ clear
+ if [[ ! -b "$efi" ]] || [[ "${efi:0:5}" != "/dev/" ]] || [[ ! -b "$root" ]] || [[ "${root:0:5}" != "/dev/" ]]; then
+     echo -e "\033[41;97mЕБАЛАЙ, у тебя такого раздела нет!!!\033[0m"
+     exit 1
+ fi
+ sleep 1s
+ echo "фарматиравание через 3..."
+ sleep 1s
+ echo "фарматиравание через 2..."
+ sleep 1s
+ echo "фарматиравание через 1..."
+ sleep 1s
+ echo "форматируем $root в $ffs."
+ mkfs.$ffs $root 
+ mkfs.fat -F 32 $efi
+ ;;
+
+2)
+ fdisk -l
+ echo "введи диск имя твоего HALAL:"
+ read disk
+ clear
+ if [[ ! -b "$disk" ]] || [[ "${disk:0:5}" != "/dev/" ]]; then
+     echo -e "\033[41;97mЕБАЛАЙ, такого диска нет!!!\033[0m"
+     exit 1
+ fi
+ sleep 1s
+ echo "фарматиравание через 3..."
+ sleep 1s
+ echo "фарматиравание через 2..."
+ sleep 1s
+ echo "фарматиравание через 1..."
+ sleep 1s
+ echo "создаём таблица family vids $disk"
+ parted $disk --script mklabel gpt
+ echo "создаём партия 2 гб на ефи наверн"
+ parted $disk --script mkpart primary fat32 1MiB 2048MiB
+ parted $disk --script set 1 esp on
+ echo "создаём узбек партия для /"
+ parted $disk --script mkpart primary $ffs2 2048MiB 100%
+ efi="${disk}1"
+ root="${disk}2"
+ echo "formatting $efi в fat32"
+ mkfs.fat -F 32 "$efi"
+ echo "formatting $root в btrfs"
+ mkfs.$ffs $root
+ echo "efi: $efi"
+ echo "root: $root"
+  ;;
+
+3)
+ fdisk -l
+ echo "введи ефи партия (e.g., /dev/sda1):"
+ read efi
+ echo "введи узбек партия там где линукс будет (e.g., /dev/sda2):"
+ read root
+ clear
+ if [[ ! -b "$efi" ]] || [[ "${efi:0:5}" != "/dev/" ]] || [[ ! -b "$root" ]] || [[ "${root:0:5}" != "/dev/" ]]; then
+     echo -e "\033[41;97mЕБАЛАЙ, у тебя такого раздела нет!!!\033[0m"
+     exit 1
+ fi
+ sleep 1s
+ echo "фарматиравание через 3..."
+ sleep 1s
+ echo "фарматиравание через 2..."
+ sleep 1s
+ echo "фарматиравание через 1..."
+ sleep 1s
+ echo "фрамат $root как btrfs "
+ mkfs.$ffs $root
+
+ echo "фармат партия $efi как fat32 для efi"
+ mkfs.fat -F 32 "$efi"
+
+ echo "efi: $efi"
+ echo "root: $root"
+ ;;
+*)
+ echo -e "\033[41;97mсук ты додик или как\033[0m"
+ exit 1
+ ;;
 
 
-if [[ "$MODE" == "auto" ]]; then
-    if [[ ! -b "$DISK" ]] || [[ "${DISK:0:5}" != "/dev/" ]]; then
-        echo -e "\033[41;97mЕБАЛАЙ, такого диска нет!!!\033[0m"
-        exit 1
-    fi
+esac
 
-    parted "$DISK" --script mklabel gpt
-    parted "$DISK" --script mkpart primary fat32 1MiB 2048MiB
-    parted "$DISK" --script set 1 esp on
-    parted "$DISK" --script mkpart primary "$FS" 2048MiB 100%
+echo "теперь у тебя много узбек партий:D------------------------"
+echo
+fdisk -l
+echo
+echo "----------------------------------------------------------"
+echo
+read -p "Нажми энтер если всё так!..."
+clear
+mount $root /mnt || { echo -e "\033[41;97mПроизошла ошибка при монтировании root $root!\033[0m"; exit 1; }
+mount --mkdir $efi /mnt/boot || { echo -e "\033[41;97mПроизошла ошибка при монтировании EFI $efi!\033[0m"; exit 1; }
 
-    get_partitions "$DISK"
-
-    echo "Форматирование $EFI_PART в fat32..."
-    mkfs.fat -F 32 "$EFI_PART"
-
-    echo "Форматирование $ROOT_PART в $FS..."
-    mkfs."$FS" "$ROOT_PART"
-
-elif [[ "$MODE" == "manual" ]]; then
-    if [[ ! -b "$EFI_PART" ]] || [[ "${EFI_PART:0:5}" != "/dev/" ]] || \
-       [[ ! -b "$ROOT_PART" ]] || [[ "${ROOT_PART:0:5}" != "/dev/" ]]; then
-        echo -e "\033[41;97mЕБАЛАЙ, у тебя такого раздела нет!!!\033[0m"
-        exit 1
-    fi
-
-    echo "Форматирование $ROOT_PART в $FS..."
-    mkfs."$FS" "$ROOT_PART"
-
-    echo "Форматирование $EFI_PART в fat32..."
-    mkfs.fat -F 32 "$EFI_PART"
-
-else
-    echo -e "\033[41;97mСук, ты додик или как\033[0m"
-    exit 1
-fi
-
-mount "/dev/$ROOT_PART" /mnt || { echo -e "\033[41;97mПроизошла ошибка при монтировании root /dev/$ROOT_PART!\033[0m"; exit 1; }
-mount --mkdir "/dev/$EFI_PART" /mnt/boot || { echo -e "\033[41;97mПроизошла ошибка при монтировании EFI /dev/$EFI_PART!\033[0m"; exit 1; }
 pacstrap -K /mnt base linux linux-firmware || { echo -e "\033[41;97mПроизошла ошибка при установке базовой системы!\033[0m"; exit 1; }
+
+
 genfstab -U /mnt >> /mnt/etc/fstab
+clear
+echo "----------------------------------------------------------"
+echo
+echo "Гатово брат!"
+echo
+echo "----------------------------------------------------------"
+echo
+read -p "Нажми энтер если хочешь перейти к конфигурацитя!..."
+clear
+
+
 
 echo 'ставим HALAL время...'
 arch-chroot /mnt /bin/bash -c "ln -sf /usr/share/zoneinfo/Europe/Moscow /etc/localtime" || { echo -e "\e[31mЧто-та не так произошло!!1 ты лох. \e[0m"; exit 1; }
@@ -81,12 +182,16 @@ echo 'Генерация локалелей (их не будет)...'
 arch-chroot /mnt /bin/bash -c "sed -i 's/^#en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen"
 arch-chroot /mnt /bin/bash -c "sed -i 's/^#ru_RU.UTF-8 UTF-8/ru_RU.UTF-8 UTF-8/' /etc/locale.gen"
 arch-chroot /mnt /bin/bash -c "locale-gen"
+clear
+arch-chroot /mnt /bin/bash -c "echo uzbek > /etc/hostname"
+clear
+echo 'введи пароль для рут!!!'
+while true; do
+    arch-chroot /mnt /bin/bash -c "passwd" && break
+    echo -e "\033[41mты пароль не ввёл дурак сука\033[0m"
+done
 
-arch-chroot /mnt /bin/bash -c "echo '$HOSTNAME' > /etc/hostname"
-
-arch-chroot /mnt /bin/bash -c "echo -e \"$ROOT_PASSWORD\n$ROOT_PASSWORD\" | passwd"
-
-
+clear
 arch-chroot /mnt /bin/bash -c "mount $efi /boot"
 arch-chroot /mnt /bin/bash -c "bootctl install"
 arch-chroot /mnt /bin/bash -c "mkdir -p /boot/loader/entries"
@@ -95,21 +200,74 @@ arch-chroot /mnt /bin/bash -c "cat > /boot/loader/entries/uzbek.conf <<EOF
 title   Uzbek Linux
 linux   /vmlinuz-linux
 initrd  /initramfs-linux.img
-options root=/dev/$ROOT_PART rw
+options root=$root rw
 EOF"
 arch-chroot /mnt /bin/bash -c "mkinitcpio -P"
+clear
 
 arch-chroot /mnt /bin/bash -c "pacman -S --noconfirm git python-pip labwc python3 tk swaybg nwg-panel nwg-drawer nwg-menu python-pyqt6 jq --needed"
 arch-chroot /mnt /bin/bash -c "mkdir /tmp"
 arch-chroot /mnt /bin/bash -c "cd /tmp && git clone https://github.com/ZDesktopEnvironment/ZDE && cd ZDE && cp -rfv tree/* /"
 arch-chroot /mnt /bin/bash -c "cd /tmp && git clone https://github.com/ZDesktopEnvironment/ZSysConf && cd ZSysConf && cp -rfv tree/* /"
 
+clear
 arch-chroot /mnt /bin/bash -c "pacman -S --noconfirm sddm"
 arch-chroot /mnt /bin/bash -c "systemctl enable sddm.service"
 
-arch-chroot /mnt /bin/bash -c "useradd -m -g users -G wheel,video,audio -s /bin/bash $USER_NAME"
-arch-chroot /mnt /bin/bash -c "echo -e \"$USER_PASSWORD\n$USER_PASSWORD\" | passwd $USER_NAME"
+clear
+echo "----------------------------------------------------------"
+echo
+echo "УСТАНОВИТЬ ХАРАМ НОВИДЕО ДРАЙВЕРА (НА ВМ НЕ НАДО)"
+echo
+echo "1) Да (nvidia-open)"
+echo "2) Нет"
+echo
+echo "----------------------------------------------------------"
 
+read gpu
+case $gpu in
+1)
+  arch-chroot /mnt /bin/bash -c "pacman -S --noconfirm nvidia-open nvidia-utils"
+  ;;
+2)
+  echo "ок"
+  ;;
+*)
+  echo "пидор"
+  ;;
+esac
+
+clear
+
+read -p 'ВВЕДИ СУКА ИИЯ ТВОЁ ПОЛЬЗОВАТЕЛЯ НА АНГЛИЙСКОМ: ' user
+
+if [[ -z $user ]]; then
+  user=uzbekuser
+fi
+
+arch-chroot /mnt /bin/bash -c "useradd -m -g users -G wheel,video,audio -s /bin/bash $user"
+echo "Введи пароль для $user:"
+while true; do
+    echo "Введи пароль для $user:"
+    if arch-chroot /mnt /bin/bash -c "passwd $user"; then
+        break
+    else
+        echo -e "\033[41;97mещё раз пароль введи тут ошибка какая-та\033[0m"
+        sleep 1
+    fi
+done
+
+
+
+clear
+echo 'Установка UZBEK-APPS...'
+echo 'Установка UZBEK-APPS...'
+echo 'Установка UZBEK-APPS...'
+echo 'Установка UZBEK-APPS...'
+echo 'Установка UZBEK-APPS...'
+echo 'Установка UZBEK-APPS...'
+echo 'Установка UZBEK-APPS...'
+echo 'Установка UZBEK-APPS...'
 echo 'Установка UZBEK-APPS...'
 
 arch-chroot /mnt /bin/bash -c "pacman -S --noconfirm python-pip sudo python"
@@ -127,12 +285,61 @@ for pkg in "${PACKAGES[@]}"; do
     "
 done
 
+clear
 echo 'я хочу вам установить: firefox, kitty'
 
 arch-chroot /mnt /bin/bash -c "pacman -S --noconfirm firefox alacritty mako wlr-randr nano micro pipewire pipewire-pulse"
-arch-chroot /mnt /bin/bash -c "echo '$USER_NAME ALL=(ALL:ALL) ALL' >> /etc/sudoers"
-
+arch-chroot /mnt /bin/bash -c "echo '$user ALL=(ALL:ALL) ALL' >> /etc/sudoers"
+clear
 echo 'ПРОИЗВОДСТВО HALAL.NET...'
+echo 'ПРОИЗВОДСТВО HALAL.NET...'
+echo 'ПРОИЗВОДСТВО HALAL.NET...'
+echo 'ПРОИЗВОДСТВО HALAL.NET...'
+echo 'ПРОИЗВОДСТВО HALAL.NET...'
+echo 'ПРОИЗВОДСТВО HALAL.NET...'
+echo 'ПРОИЗВОДСТВО HALAL.NET...'
+echo 'ПРОИЗВОДСТВО HALAL.NET...'
+echo 'ПРОИЗВОДСТВО HALAL.NET...'
+echo 'ПРОИЗВОДСТВО HALAL.NET...'
+echo 'ПРОИЗВОДСТВО HALAL.NET...'
+echo 'ПРОИЗВОДСТВО HALAL.NET...'
+echo 'ПРОИЗВОДСТВО HALAL.NET...'
+echo 'ПРОИЗВОДСТВО HALAL.NET...'
+echo 'ПРОИЗВОДСТВО HALAL.NET...'
+echo 'ПРОИЗВОДСТВО HALAL.NET...'
+echo 'ПРОИЗВОДСТВО HALAL.NET...'
+echo 'ПРОИЗВОДСТВО HALAL.NET...'
+echo 'ПРОИЗВОДСТВО HALAL.NET...'
+echo 'ПРОИЗВОДСТВО HALAL.NET...'
+echo 'ПРОИЗВОДСТВО HALAL.NET...'
+echo 'ПРОИЗВОДСТВО HALAL.NET...'
+echo 'ПРОИЗВОДСТВО HALAL.NET...'
+echo 'ПРОИЗВОДСТВО HALAL.NET...'
+echo 'ПРОИЗВОДСТВО HALAL.NET...'
+echo 'ПРОИЗВОДСТВО HALAL.NET...'
+echo 'ПРОИЗВОДСТВО HALAL.NET...'
+echo 'ПРОИЗВОДСТВО HALAL.NET...'
+echo 'ПРОИЗВОДСТВО HALAL.NET...'
+echo 'ПРОИЗВОДСТВО HALAL.NET...'
+echo 'ПРОИЗВОДСТВО HALAL.NET...'
+echo 'ПРОИЗВОДСТВО HALAL.NET...'
+echo 'ПРОИЗВОДСТВО HALAL.NET...'
+echo 'ПРОИЗВОДСТВО HALAL.NET...'
+echo 'ПРОИЗВОДСТВО HALAL.NET...'
+echo 'ПРОИЗВОДСТВО HALAL.NET...'
+echo 'ПРОИЗВОДСТВО HALAL.NET...'
+echo 'ПРОИЗВОДСТВО HALAL.NET...'
+echo 'ПРОИЗВОДСТВО HALAL.NET...'
+echo 'ПРОИЗВОДСТВО HALAL.NET...'
+echo 'ПРОИЗВОДСТВО HALAL.NET...'
+echo 'ПРОИЗВОДСТВО HALAL.NET...'
+echo 'ПРОИЗВОДСТВО HALAL.NET...'
+echo 'ПРОИЗВОДСТВО HALAL.NET...'
+echo 'ПРОИЗВОДСТВО HALAL.NET...'
+echo 'ПРОИЗВОДСТВО HALAL.NET...'
+echo 'ПРОИЗВОДСТВО HALAL.NET...'
+echo 'ПРОИЗВОДСТВО HALAL.NET...'
+clear
 
 arch-chroot /mnt /bin/bash -c "systemctl enable systemd-networkd.service systemd-resolved.service"
 
@@ -174,3 +381,6 @@ echo 'Da.'
 echo
 echo -e "${F_DIM}---------------------------------------------------------------${NO_FORMAT}"
 echo -e "${C_GREEN}УСТАНОВКА UZBEK LINUX ЗАВЕРШЕНА.${NO_FORMAT}"
+echo
+echo "ВВЕДИ ДЛЯ ВХОДА В ЧРУТ: arch-chroot /mnt /bin/bash"
+echo "ВВЕДИ ДЛЯ ПЕРЕЗАПУСКА И ВХОДА В УЗБЕК ЛИНУКС: reboot"
