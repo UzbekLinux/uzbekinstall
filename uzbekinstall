@@ -40,10 +40,10 @@ if [[ "$MODE" == "auto" ]]; then
     get_partitions "$DISK"
 
     echo "Форматирование $EFI_PART в fat32..."
-    mkfs.fat -F 32 "$EFI_PART"
+    mkfs.fat -F 32 -I "$EFI_PART"
 
     echo "Форматирование $ROOT_PART в $FS..."
-    mkfs."$FS" "$ROOT_PART"
+    mkfs."$FS" -f "$ROOT_PART" 
 
 elif [[ "$MODE" == "manual" ]]; then
     if [[ ! -b "$EFI_PART" ]] || [[ "${EFI_PART:0:5}" != "/dev/" ]] || \
@@ -53,10 +53,10 @@ elif [[ "$MODE" == "manual" ]]; then
     fi
 
     echo "Форматирование $ROOT_PART в $FS..."
-    mkfs."$FS" "$ROOT_PART"
+    mkfs."$FS" -f "$ROOT_PART" 
 
     echo "Форматирование $EFI_PART в fat32..."
-    mkfs.fat -F 32 "$EFI_PART"
+    mkfs.fat -F 32 -I "$EFI_PART"
 
 else
     echo -e "\033[41;97mСук, ты додик или как\033[0m"
