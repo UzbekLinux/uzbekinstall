@@ -43,7 +43,7 @@ if [[ "$PART_MODE" == "auto" ]]; then
     mkfs.fat -F 32 -I "$EFI_PART"
 
     echo "Форматирование $ROOT_PART в $FS..."
-    mkfs."$FS" -f "$ROOT_PART" 
+    mkfs."$FS" "$ROOT_PART" 
 
 elif [[ "$PART_MODE" == "manual" ]]; then
     if [[ ! -b "$EFI_PART" ]] || [[ "${EFI_PART:0:5}" != "/dev/" ]] || \
@@ -53,7 +53,7 @@ elif [[ "$PART_MODE" == "manual" ]]; then
     fi
 
     echo "Форматирование $ROOT_PART в $FS..."
-    mkfs."$FS" -f "$ROOT_PART" 
+    mkfs."$FS" "$ROOT_PART" 
 
     echo "Форматирование $EFI_PART в fat32..."
     mkfs.fat -F 32 -I "$EFI_PART"
@@ -63,8 +63,8 @@ else
     exit 1
 fi
 
-mount "/dev/$ROOT_PART" /mnt || { echo -e "\033[41;97mПроизошла ошибка при монтировании root /dev/$ROOT_PART!\033[0m"; exit 1; }
-mount --mkdir "/dev/$EFI_PART" /mnt/boot || { echo -e "\033[41;97mПроизошла ошибка при монтировании EFI /dev/$EFI_PART!\033[0m"; exit 1; }
+mount "$ROOT_PART" /mnt || { echo -e "\033[41;97mПроизошла ошибка при монтировании root $ROOT_PART!\033[0m"; exit 1; }
+mount --mkdir "$EFI_PART" /mnt/boot || { echo -e "\033[41;97mПроизошла ошибка при монтировании EFI $EFI_PART!\033[0m"; exit 1; }
 pacstrap -K /mnt base linux linux-firmware || { echo -e "\033[41;97mПроизошла ошибка при установке базовой системы!\033[0m"; exit 1; }
 genfstab -U /mnt >> /mnt/etc/fstab
 
