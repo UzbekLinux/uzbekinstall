@@ -55,7 +55,7 @@ fi
 
 mount "$ROOT_PART" /mnt || { echo -e "Произошла ошибка при монтировании root $ROOT_PART!"; exit 1; }
 mount --mkdir "$EFI_PART" /mnt/boot || { echo -e "Произошла ошибка при монтировании EFI $EFI_PART!"; exit 1; }
-pacstrap -K /mnt base linux linux-firmware || { echo -e "Произошла ошибка при установке базовой системы!; exit 1; }
+pacstrap -K /mnt base linux linux-firmware || { echo -e "Произошла ошибка при установке базовой системы!"; exit 1; }
 genfstab -U /mnt >> /mnt/etc/fstab
 
 echo 'ставим HALAL время...'
