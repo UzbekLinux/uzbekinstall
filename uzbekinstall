@@ -97,8 +97,8 @@ arch-chroot /mnt /bin/bash -c "cd /tmp && git clone https://github.com/ZDesktopE
 arch-chroot /mnt /bin/bash -c "pacman -S --noconfirm sddm"
 arch-chroot /mnt /bin/bash -c "systemctl enable sddm.service"
 
-arch-chroot /mnt /bin/bash -c "useradd -m -g users -G wheel,video,audio -s /bin/bash $USER_NAME"
-arch-chroot /mnt /bin/bash -c "echo -e \"$USER_PASSWORD\n$USER_PASSWORD\" | passwd $USER_NAME"
+arch-chroot /mnt /bin/bash -c "useradd -m -g users -G wheel,video,audio -s /bin/bash $USERNAME"
+arch-chroot /mnt /bin/bash -c "echo -e \"$USER_PASSWORD\n$USER_PASSWORD\" | passwd $USERNAME"
 
 echo 'Установка UZBEK-APPS...'
 
