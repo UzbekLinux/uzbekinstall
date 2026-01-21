@@ -26,7 +26,7 @@ get_partitions() {
 }
 
 
-if [[ "$MODE" == "auto" ]]; then
+if [[ "$PART_MODE" == "auto" ]]; then
     if [[ ! -b "$DISK" ]] || [[ "${DISK:0:5}" != "/dev/" ]]; then
         echo -e "\033[41;97mЕБАЛАЙ, такого диска нет!!!\033[0m"
         exit 1
@@ -45,7 +45,7 @@ if [[ "$MODE" == "auto" ]]; then
     echo "Форматирование $ROOT_PART в $FS..."
     mkfs."$FS" -f "$ROOT_PART" 
 
-elif [[ "$MODE" == "manual" ]]; then
+elif [[ "$PART_MODE" == "manual" ]]; then
     if [[ ! -b "$EFI_PART" ]] || [[ "${EFI_PART:0:5}" != "/dev/" ]] || \
        [[ ! -b "$ROOT_PART" ]] || [[ "${ROOT_PART:0:5}" != "/dev/" ]]; then
         echo -e "\033[41;97mЕБАЛАЙ, у тебя такого раздела нет!!!\033[0m"
