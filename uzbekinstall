@@ -1,15 +1,5 @@
 #!/bin/bash
 
-NO_FORMAT="\033[0m"
-F_UNDERLINED="\033[4m"
-C_GREY3="\033[38;5;232m"
-C_DARKTURQUOISE="\033[48;5;44m"
-F_DIM="\033[2m"
-C_WHITE="\033[38;5;15m"
-C_GREEN="\033[38;5;46m"   
-C_BRIGHT_RED="\033[91m"
-
-
 FS="ext4"
 
 source /tmp/uzbekinstall.conf
@@ -28,7 +18,7 @@ get_partitions() {
 
 if [[ "$PART_MODE" == "auto" ]]; then
     if [[ ! -b "$DISK" ]] || [[ "${DISK:0:5}" != "/dev/" ]]; then
-        echo -e "\033[41;97mЕБАЛАЙ, такого диска нет!!!\033[0m"
+        echo -e "ЕБАЛАЙ, такого диска нет!!!"
         exit 1
     fi
 
@@ -48,7 +38,7 @@ if [[ "$PART_MODE" == "auto" ]]; then
 elif [[ "$PART_MODE" == "manual" ]]; then
     if [[ ! -b "$EFI_PART" ]] || [[ "${EFI_PART:0:5}" != "/dev/" ]] || \
        [[ ! -b "$ROOT_PART" ]] || [[ "${ROOT_PART:0:5}" != "/dev/" ]]; then
-        echo -e "\033[41;97mЕБАЛАЙ, у тебя такого раздела нет!!!\033[0m"
+        echo -e "ЕБАЛАЙ, у тебя такого раздела нет!!!"
         exit 1
     fi
 
@@ -63,16 +53,16 @@ else
     exit 1
 fi
 
-mount "$ROOT_PART" /mnt || { echo -e "\033[41;97mПроизошла ошибка при монтировании root $ROOT_PART!\033[0m"; exit 1; }
-mount --mkdir "$EFI_PART" /mnt/boot || { echo -e "\033[41;97mПроизошла ошибка при монтировании EFI $EFI_PART!\033[0m"; exit 1; }
-pacstrap -K /mnt base linux linux-firmware || { echo -e "\033[41;97mПроизошла ошибка при установке базовой системы!\033[0m"; exit 1; }
+mount "$ROOT_PART" /mnt || { echo -e "Произошла ошибка при монтировании root $ROOT_PART!"; exit 1; }
+mount --mkdir "$EFI_PART" /mnt/boot || { echo -e "Произошла ошибка при монтировании EFI $EFI_PART!"; exit 1; }
+pacstrap -K /mnt base linux linux-firmware || { echo -e "Произошла ошибка при установке базовой системы!; exit 1; }
 genfstab -U /mnt >> /mnt/etc/fstab
 
 echo 'ставим HALAL время...'
-arch-chroot /mnt /bin/bash -c "ln -sf /usr/share/zoneinfo/Europe/Moscow /etc/localtime" || { echo -e "\e[31mЧто-та не так произошло!!1 ты лох. \e[0m"; exit 1; }
+arch-chroot /mnt /bin/bash -c "ln -sf /usr/share/zoneinfo/Europe/Moscow /etc/localtime" || { echo -e "Что-та не так произошло!!1 ты лох."; exit 1; }
 arch-chroot /mnt /bin/bash -c "
 if ! curl -s https://www.google.com | grep -q '<title>Google</title>'; then
-    echo -e '\033[41;97mинтернета нет!!!:( \033[0m'
+    echo -e 'интернета нет!!!:( '
     exit 1
 fi
 "
@@ -87,7 +77,7 @@ arch-chroot /mnt /bin/bash -c "echo '$HOSTNAME' > /etc/hostname"
 arch-chroot /mnt /bin/bash -c "echo -e \"$ROOT_PASSWORD\n$ROOT_PASSWORD\" | passwd"
 
 
-arch-chroot /mnt /bin/bash -c "mount $efi /boot"
+arch-chroot /mnt /bin/bash -c "mount $EFI_PART /boot"
 arch-chroot /mnt /bin/bash -c "bootctl install"
 arch-chroot /mnt /bin/bash -c "mkdir -p /boot/loader/entries"
 arch-chroot /mnt /bin/bash -c "touch /boot/loader/entries/uzbek.conf"
@@ -95,7 +85,7 @@ arch-chroot /mnt /bin/bash -c "cat > /boot/loader/entries/uzbek.conf <<EOF
 title   Uzbek Linux
 linux   /vmlinuz-linux
 initrd  /initramfs-linux.img
-options root=/dev/$ROOT_PART rw
+options root=$ROOT_PART rw
 EOF"
 arch-chroot /mnt /bin/bash -c "mkinitcpio -P"
 
@@ -172,5 +162,5 @@ arch-chroot /mnt /bin/bash -c "uzupdate"
 echo 'Da.'
 
 echo
-echo -e "${F_DIM}---------------------------------------------------------------${NO_FORMAT}"
-echo -e "${C_GREEN}УСТАНОВКА UZBEK LINUX ЗАВЕРШЕНА.${NO_FORMAT}"
+echo -e "---------------------------------------------------------------"
+echo -e "УСТАНОВКА UZBEK LINUX ЗАВЕРШЕНА."
