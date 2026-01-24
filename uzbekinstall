@@ -288,7 +288,7 @@ done
 clear
 echo 'я хочу вам установить: firefox, kitty'
 
-arch-chroot /mnt /bin/bash -c "pacman -S --noconfirm firefox alacritty mako wlr-randr nano micro pipewire pipewire-pulse"
+arch-chroot /mnt /bin/bash -c "pacman -S --noconfirm firefox nwg-drawer nwg-menu libnotify python-pyqt5 alacritty mako wlr-randr nano micro pipewire pipewire-pulse"
 arch-chroot /mnt /bin/bash -c "echo '$user ALL=(ALL:ALL) ALL' >> /etc/sudoers"
 clear
 echo 'ПРОИЗВОДСТВО HALAL.NET...'
