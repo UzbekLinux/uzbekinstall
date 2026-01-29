@@ -121,8 +121,7 @@ for pkg in "${PACKAGES[@]}"; do
 done
 
 arch-chroot /mnt /bin/bash -c "pacman -S --noconfirm firefox alacritty mako wlr-randr nano micro pipewire pipewire-pulse libnotify python-pyqt5 swaybg nwg-drawer nwg-menu jq dhcpcd iw wpa_supplicant"
-arch-chroot /mnt /bin/bash -c "echo '$USERNAME ALL=(ALL:ALL) ALL' >> /etc/sudoers"
-
+arch-chroot /mnt /bin/bash -c "echo '%wheel ALL=(ALL:ALL) ALL' >> /etc/sudoers"
 
 
 echo 'ПРОИЗВОДСТВО HALAL.NET...'
