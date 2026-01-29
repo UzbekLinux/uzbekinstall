@@ -113,16 +113,14 @@ PACKAGES=("halalIDE" "320totalsecurity" "eblan-editor" "eblan-music-editor" "ebl
 
 for pkg in "${PACKAGES[@]}"; do
     arch-chroot /mnt /bin/bash -c "
-        timeout 30s bash -c '
+        timeout --signal=SIGKILL 30s bash -c '
             python -m venv /tmp/venv_$pkg &&
             source /tmp/venv_$pkg/bin/activate &&
             spm install $pkg &&
             deactivate
         '
-    " &
+    "
 done
-
-wait
 
 arch-chroot /mnt /bin/bash -c "pacman -S --noconfirm firefox alacritty mako wlr-randr nano micro pipewire pipewire-pulse libnotify python-pyqt5 swaybg nwg-drawer nwg-menu jq dhcpcd iw wpa_supplicant"
 arch-chroot /mnt /bin/bash -c "echo '%wheel ALL=(ALL:ALL) ALL' >> /etc/sudoers"
