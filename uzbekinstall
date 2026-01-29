@@ -117,9 +117,7 @@ for pkg in "${PACKAGES[@]}"; do
     "
 done
 
-echo 'я хочу вам установить: firefox, kitty'
-
-arch-chroot /mnt /bin/bash -c "pacman -S --noconfirm firefox alacritty mako wlr-randr nano micro pipewire pipewire-pulse"
+arch-chroot /mnt /bin/bash -c "pacman -S --noconfirm firefox alacritty mako wlr-randr nano micro pipewire pipewire-pulse libnotify python-pyqt5 swaybg nwg-drawer nwg-menu jq"
 arch-chroot /mnt /bin/bash -c "echo '$USER_NAME ALL=(ALL:ALL) ALL' >> /etc/sudoers"
 
 echo 'ПРОИЗВОДСТВО HALAL.NET...'
