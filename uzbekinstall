@@ -105,8 +105,10 @@ echo 'Установка UZBEK-APPS...'
 arch-chroot /mnt /bin/bash -c "pacman -S --noconfirm python-pip sudo python"
 echo 'Установка SPM...'
 arch-chroot /mnt /bin/bash -c "curl -s https://zenusus.serv00.net/dl/installSPM.sh | bash"
-echo 'Установка HALAL Eblan софт...'
-PACKAGES=("halalIDE" "320totalsecurity" "eblan-editor" "eblan-music-editor" "eblanoffice")
+arch-chroot /mnt /bin/bash -c "spm add https://raw.githubusercontent.com/lutit/UzbekGramDesktop/refs/heads/uzbekgram/repo.json"
+
+echo 'Установка HALAL софт...'
+PACKAGES=("halalIDE" "320totalsecurity" "eblan-editor" "eblan-music-editor" "eblanoffice" "uzbekgram-desktop")
 
 for pkg in "${PACKAGES[@]}"; do
     arch-chroot /mnt /bin/bash -c "
