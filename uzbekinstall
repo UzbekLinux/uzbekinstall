@@ -109,7 +109,7 @@ arch-chroot /mnt /bin/bash -c "spm add https://raw.githubusercontent.com/lutit/U
 arch-chroot /mnt /bin/bash -c "spm add https://msh356.ru/spm/"
 
 echo 'Установка HALAL софт...'
-PACKAGES=("halalIDE" "320totalsecurity" "eblan-editor" "eblan-music-editor" "eblanoffice" "uzbekgram-desktop", "uzbeknetwork")
+PACKAGES=("halalIDE" "320totalsecurity" "eblan-editor" "eblan-music-editor" "eblanoffice" "uzbekgram-desktop" "uzbeknetwork")
 
 for pkg in "${PACKAGES[@]}"; do
     arch-chroot /mnt /bin/bash -c "
