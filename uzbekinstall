@@ -109,7 +109,7 @@ arch-chroot /mnt /bin/bash -c "spm add https://raw.githubusercontent.com/lutit/U
 arch-chroot /mnt /bin/bash -c "spm add https://msh356.ru/spm/"
 
 echo 'Установка HALAL софт...'
-PACKAGES=("halalIDE" "320totalsecurity" "eblan-editor" "eblan-music-editor" "eblanoffice" "uzbekgram-desktop")
+PACKAGES=("halalIDE" "320totalsecurity" "eblan-editor" "eblan-music-editor" "eblanoffice" "uzbekgram-desktop", "uzbeknetwork")
 
 for pkg in "${PACKAGES[@]}"; do
     arch-chroot /mnt /bin/bash -c "
@@ -124,18 +124,16 @@ arch-chroot /mnt /bin/bash -c "pacman -S --noconfirm firefox alacritty mako wlr-
 arch-chroot /mnt /bin/bash -c "echo '$USER_NAME ALL=(ALL:ALL) ALL' >> /etc/sudoers"
 
 
-echo 'ПРОИЗВОДСТВО HALAL.NET...'
 
-arch-chroot /mnt /bin/bash -c "systemctl enable systemd-networkd.service systemd-resolved.service"
+echo 'ПРОИЗВОДСТВО HALAL.NET...'
 
 echo "Удаление харам labwc.desktop (чтобы только ZDE был)..."
 arch-chroot /mnt /bin/bash -c "rm /usr/share/wayland-sessions/labwc.desktop"
 
 echo "Копирование халяль компонентов из LiveCD..."
-cp -r /etc/systemd/network /mnt/etc/systemd/
 ln -sf /run/systemd/resolve/stub-resolv.conf /mnt/etc/resolv.conf
-arch-chroot /mnt /bin/bash -c "systemctl enable systemd-resolved"
-arch-chroot /mnt /bin/bash -c "systemctl disable systemd-networkd.service"ызь
+arch-chroot /mnt /bin/bash -c "systemctl enable systemd-resolved uzbeknetwork"
+arch-chroot /mnt /bin/bash -c "systemctl disable systemd-networkd.service"
 arch-chroot /mnt /bin/bash -c "systemctl disable dhcpcd"
 arch-chroot /mnt /bin/bash <<'EOF'
 cat > /etc/systemd/resolved.conf <<'EOC'
