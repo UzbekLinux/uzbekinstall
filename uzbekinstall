@@ -93,7 +93,16 @@ git clone --depth 1 \
   https://github.com/UzbekLinux/uzbek-refind-theme \
   /mnt/boot/EFI/refind/themes/uzbek
 
-rm /mnt/boot/refind_linux.conf
+KERNEL_PARAMS="root=$ROOT_PART rw"
+REFIND_CONF="$TARGET/boot/refind_linux.conf"
+KERNELS=$(ls "$TARGET/boot"/vmlinuz-* 2>/dev/null || echo "")
+
+> "$REFIND_CONF"
+for KERNEL in $KERNELS; do
+    BASENAME=$(basename "$KERNEL")
+    INITRD="/initramfs-${BASENAME#vmlinuz-}.img"
+    echo "\"Uzbek Linux ($BASENAME)\" \"$KERNEL_PARAMS initrd=$INITRD\"" >> "$REFIND_CONF"
+done
 
 arch-chroot "$TARGET" /bin/bash -c "cat > /boot/EFI/refind/refind.conf <<EOF
 timeout 20
