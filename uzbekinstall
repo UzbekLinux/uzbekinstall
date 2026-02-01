@@ -132,6 +132,9 @@ echo "Удаление харам labwc.desktop (чтобы только ZDE б�
 arch-chroot /mnt /bin/bash -c "rm /usr/share/wayland-sessions/labwc.desktop"
 
 echo "Копирование халяль компонентов из LiveCD..."
+
+mkdir -p /mnt/etc/xdg/zde
+cp /etc/xdg/zde/config.json /mnt/etc/xdg/zde/config.json
 ln -sf /run/systemd/resolve/stub-resolv.conf /mnt/etc/resolv.conf
 arch-chroot /mnt /bin/bash -c "systemctl enable systemd-resolved uzbeknetwork"
 arch-chroot /mnt /bin/bash -c "systemctl disable systemd-networkd.service"
