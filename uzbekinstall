@@ -4,6 +4,13 @@ FS="ext4"
 
 source /tmp/uzbekinstall.conf
 
+TARGET="$TARGET/"
+
+if [ ! -d /sys/firmware/efi ]; then
+    echo "система не в uefi!"
+    exit 1
+fi
+
 get_partitions() {
     local DISK="$1"
     if [[ "$DISK" =~ nvme ]]; then
@@ -15,7 +22,7 @@ get_partitions() {
     fi
 }
 
-umount -R /mnt 2>/dev/null || true
+umount -R "$TARGET" 2>/dev/null || true
 
 if [[ "$PART_MODE" == "auto" ]]; then
     if [[ ! -b "$DISK" ]] || [[ "${DISK:0:5}" != "/dev/" ]]; then
@@ -54,66 +61,69 @@ else
     exit 1
 fi
 
-mount "$ROOT_PART" /mnt || { echo -e "Произошла ошибка при монтировании root $ROOT_PART!"; exit 1; }
-mount --mkdir "$EFI_PART" /mnt/boot || { echo -e "Произошла ошибка при монтировании EFI $EFI_PART!"; exit 1; }
-pacstrap -K /mnt base linux linux-firmware || { echo -e "Произошла ошибка при установке базовой системы!"; exit 1; }
-genfstab -U /mnt >> /mnt/etc/fstab
+mount "$ROOT_PART" "$TARGET" || { echo -e "Произошла ошибка при монтировании root $ROOT_PART!"; exit 1; }
+mount --mkdir "$EFI_PART" "$TARGET/boot" || { echo -e "Произошла ошибка при монтировании EFI $EFI_PART!"; exit 1; }
+pacstrap -K "$TARGET" base linux linux-firmware refind || { echo -e "Произошла ошибка при установке базовой системы!"; exit 1; }
+genfstab -U "$TARGET" >> $TARGET/etc/fstab
 
 echo 'ставим HALAL время...'
-arch-chroot /mnt /bin/bash -c "ln -sf /usr/share/zoneinfo/Europe/Moscow /etc/localtime" || { echo -e "Что-та не так произошло!!1 ты лох."; exit 1; }
-arch-chroot /mnt /bin/bash -c "
+arch-chroot "$TARGET" /bin/bash -c "ln -sf /usr/share/zoneinfo/Europe/Moscow /etc/localtime" || { echo -e "Что-та не так произошло!!1 ты лох."; exit 1; }
+arch-chroot "$TARGET" /bin/bash -c "
 if ! curl -s https://www.google.com | grep -q '<title>Google</title>'; then
     echo -e 'интернета нет!!!:( '
     exit 1
 fi
 "
-arch-chroot /mnt /bin/bash -c "hwclock --systohc"
+arch-chroot "$TARGET" /bin/bash -c "hwclock --systohc"
 echo 'Генерация локалелей (их не будет)...'
-arch-chroot /mnt /bin/bash -c "sed -i 's/^#en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen"
-arch-chroot /mnt /bin/bash -c "sed -i 's/^#ru_RU.UTF-8 UTF-8/ru_RU.UTF-8 UTF-8/' /etc/locale.gen"
-arch-chroot /mnt /bin/bash -c "locale-gen"
+arch-chroot "$TARGET" /bin/bash -c "sed -i 's/^#en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen"
+arch-chroot "$TARGET" /bin/bash -c "sed -i 's/^#ru_RU.UTF-8 UTF-8/ru_RU.UTF-8 UTF-8/' /etc/locale.gen"
+arch-chroot "$TARGET" /bin/bash -c "locale-gen"
 
-arch-chroot /mnt /bin/bash -c "echo '$HOSTNAME' > /etc/hostname"
+arch-chroot "$TARGET" /bin/bash -c "echo '$HOSTNAME' > /etc/hostname"
 
-arch-chroot /mnt /bin/bash -c "echo -e \"$ROOT_PASSWORD\n$ROOT_PASSWORD\" | passwd"
+arch-chroot "$TARGET" /bin/bash -c "echo -e \"$ROOT_PASSWORD\n$ROOT_PASSWORD\" | passwd"
 
+arch-chroot "$TARGET" /bin/bash -c "mount $EFI_PART /boot"
+arch-chroot "$TARGET" /bin/bash -c "refind-install"
 
-arch-chroot /mnt /bin/bash -c "mount $EFI_PART /boot"
-arch-chroot /mnt /bin/bash -c "bootctl install"
-arch-chroot /mnt /bin/bash -c "mkdir -p /boot/loader/entries"
-arch-chroot /mnt /bin/bash -c "touch /boot/loader/entries/uzbek.conf"
-arch-chroot /mnt /bin/bash -c "cat > /boot/loader/entries/uzbek.conf <<EOF
-title   Uzbek Linux
-linux   /vmlinuz-linux
-initrd  /initramfs-linux.img
-options root=$ROOT_PART rw
-EOF"
-arch-chroot /mnt /bin/bash -c "mkinitcpio -P"
+KERNEL_PARAMS="root=$ROOT_PART rw"
+REFIND_CONF="$TARGET/boot/refind_linux.conf"
+KERNELS=$(ls "$TARGET/boot"/vmlinuz-* 2>/dev/null || echo "")
 
-arch-chroot /mnt /bin/bash -c "pacman -S --noconfirm git python-pip labwc python3 tk swaybg nwg-panel nwg-drawer nwg-menu python-pyqt6 jq --needed"
-arch-chroot /mnt /bin/bash -c "mkdir /tmp"
-arch-chroot /mnt /bin/bash -c "cd /tmp && git clone https://github.com/ZDesktopEnvironment/ZDE && cd ZDE && cp -rfv tree/* /"
-arch-chroot /mnt /bin/bash -c "cd /tmp && git clone https://github.com/ZDesktopEnvironment/ZSysConf && cd ZSysConf && cp -rfv tree/* /"
+> "$REFIND_CONF"
+for KERNEL in $KERNELS; do
+    BASENAME=$(basename "$KERNEL")
+    INITRD="/initramfs-${BASENAME#vmlinuz-}.img"
+    echo "\"Uzbek Linux ($BASENAME)\" \"$KERNEL_PARAMS initrd=$INITRD\"" >> "$REFIND_CONF"
+done
 
-arch-chroot /mnt /bin/bash -c "pacman -S --noconfirm sddm"
-arch-chroot /mnt /bin/bash -c "systemctl enable sddm.service"
+arch-chroot "$TARGET" /bin/bash -c "mkinitcpio -P"
 
-arch-chroot /mnt /bin/bash -c "useradd -m -g users -G wheel,video,audio -s /bin/bash $USERNAME"
-arch-chroot /mnt /bin/bash -c "echo -e \"$USER_PASSWORD\n$USER_PASSWORD\" | passwd $USERNAME"
+arch-chroot "$TARGET" /bin/bash -c "pacman -S --noconfirm git python-pip labwc python3 tk swaybg nwg-panel nwg-drawer nwg-menu python-pyqt6 jq --needed"
+arch-chroot "$TARGET" /bin/bash -c "mkdir /tmp"
+arch-chroot "$TARGET" /bin/bash -c "cd /tmp && git clone https://github.com/ZDesktopEnvironment/ZDE && cd ZDE && cp -rfv tree/* /"
+arch-chroot "$TARGET" /bin/bash -c "cd /tmp && git clone https://github.com/ZDesktopEnvironment/ZSysConf && cd ZSysConf && cp -rfv tree/* /"
+
+arch-chroot "$TARGET" /bin/bash -c "pacman -S --noconfirm sddm"
+arch-chroot "$TARGET" /bin/bash -c "systemctl enable sddm.service"
+
+arch-chroot "$TARGET" /bin/bash -c "useradd -m -g users -G wheel,video,audio -s /bin/bash $USERNAME"
+arch-chroot "$TARGET" /bin/bash -c "echo -e \"$USER_PASSWORD\n$USER_PASSWORD\" | passwd $USERNAME"
 
 echo 'Установка UZBEK-APPS...'
 
-arch-chroot /mnt /bin/bash -c "pacman -S --noconfirm python-pip sudo python"
+arch-chroot "$TARGET" /bin/bash -c "pacman -S --noconfirm python-pip sudo python"
 echo 'Установка SPM...'
-arch-chroot /mnt /bin/bash -c "curl -s https://zenusus.serv00.net/dl/installSPM.sh | bash"
-arch-chroot /mnt /bin/bash -c "spm add https://raw.githubusercontent.com/lutit/UzbekGramDesktop/refs/heads/uzbekgram/repo.json"
-arch-chroot /mnt /bin/bash -c "spm add https://msh356.ru/spm/"
+arch-chroot "$TARGET" /bin/bash -c "curl -s https://zenusus.serv00.net/dl/installSPM.sh | bash"
+arch-chroot "$TARGET" /bin/bash -c "spm add https://raw.githubusercontent.com/lutit/UzbekGramDesktop/refs/heads/uzbekgram/repo.json"
+arch-chroot "$TARGET" /bin/bash -c "spm add https://msh356.ru/spm/"
 
 echo 'Установка HALAL софт...'
 PACKAGES=("halalIDE" "320totalsecurity" "eblan-editor" "eblan-music-editor" "eblanoffice" "uzbekgram-desktop" "uzbeknetwork")
 
 for pkg in "${PACKAGES[@]}"; do
-    arch-chroot /mnt /bin/bash -c "
+    arch-chroot $TARGET /bin/bash -c "
         timeout --signal=SIGKILL 30s bash -c '
             python -m venv /tmp/venv_$pkg &&
             source /tmp/venv_$pkg/bin/activate &&
@@ -123,19 +133,19 @@ for pkg in "${PACKAGES[@]}"; do
     "
 done
 
-arch-chroot /mnt /bin/bash -c "pacman -S --noconfirm firefox alacritty mako wlr-randr nano micro pipewire pipewire-pulse libnotify python-pyqt5 swaybg nwg-drawer nwg-menu jq dhcpcd iw wpa_supplicant"
-arch-chroot /mnt /bin/bash -c "echo '%wheel ALL=(ALL:ALL) ALL' >> /etc/sudoers"
+arch-chroot "$TARGET" /bin/bash -c "pacman -S --noconfirm firefox alacritty mako wlr-randr nano micro pipewire pipewire-pulse libnotify python-pyqt5 swaybg nwg-drawer nwg-menu jq dhcpcd iw wpa_supplicant"
+arch-chroot "$TARGET" /bin/bash -c "echo '%wheel ALL=(ALL:ALL) ALL' >> /etc/sudoers"
 
 
 echo 'ПРОИЗВОДСТВО HALAL.NET...'
 
 echo "Удаление харам labwc.desktop (чтобы только ZDE был)..."
-arch-chroot /mnt /bin/bash -c "rm /usr/share/wayland-sessions/labwc.desktop"
+arch-chroot "$TARGET" /bin/bash -c "rm /usr/share/wayland-sessions/labwc.desktop"
 
 echo "Копирование халяль компонентов из LiveCD..."
 
-mkdir -p /mnt/etc/xdg/zde
-arch-chroot /mnt /bin/bash -c 'cat > /etc/xdg/zde/config.json <<EOF
+mkdir -p $TARGET/etc/xdg/zde
+arch-chroot "$TARGET" /bin/bash -c 'cat > /etc/xdg/zde/config.json <<EOF
 {
     "wallpaper_type": "image",
     "wallpaper": {
@@ -150,11 +160,11 @@ arch-chroot /mnt /bin/bash -c 'cat > /etc/xdg/zde/config.json <<EOF
 }
 EOF'
 
-ln -sf /run/systemd/resolve/stub-resolv.conf /mnt/etc/resolv.conf
-arch-chroot /mnt /bin/bash -c "systemctl enable systemd-resolved uzbeknetwork"
-arch-chroot /mnt /bin/bash -c "systemctl disable systemd-networkd.service"
-arch-chroot /mnt /bin/bash -c "systemctl disable dhcpcd"
-arch-chroot /mnt /bin/bash <<'EOF'
+ln -sf /run/systemd/resolve/stub-resolv.conf $TARGET/etc/resolv.conf
+arch-chroot "$TARGET" /bin/bash -c "systemctl enable systemd-resolved uzbeknetwork"
+arch-chroot "$TARGET" /bin/bash -c "systemctl disable systemd-networkd.service"
+arch-chroot "$TARGET" /bin/bash -c "systemctl disable dhcpcd"
+arch-chroot "$TARGET" /bin/bash <<'EOF'
 cat > /etc/systemd/resolved.conf <<'EOC'
 [Resolve]
 DNS=1.1.1.1 8.8.8.8
@@ -164,19 +174,19 @@ EOC
 EOF
 
 
-cp /etc/os-release /mnt/etc/os-release
-mkdir -p /mnt/usr/local/bin
-cp /usr/local/bin/halal /mnt/usr/local/bin/halal
-cp /usr/local/bin/halalfetch /mnt/usr/local/bin/halalfetch
-cp /usr/local/bin/uzupdate /mnt/usr/local/bin/uzupdate
-cp /usr/local/bin/sing-box /mnt/usr/local/bin/sing-box
+cp /etc/os-release $TARGET/etc/os-release
+mkdir -p $TARGET/usr/local/bin
+cp /usr/local/bin/halal $TARGET/usr/local/bin/halal
+cp /usr/local/bin/halalfetch $TARGET/usr/local/bin/halalfetch
+cp /usr/local/bin/uzupdate $TARGET/usr/local/bin/uzupdate
+cp /usr/local/bin/sing-box $TARGET/usr/local/bin/sing-box
 
-chmod +x /mnt/usr/local/bin/halal
-chmod +x /mnt/usr/local/bin/sing-box
-chmod +x /mnt/usr/local/bin/halalfetch
-chmod +x /mnt/usr/local/bin/uzupdate
+chmod +x $TARGET/usr/local/bin/halal
+chmod +x $TARGET/usr/local/bin/sing-box
+chmod +x $TARGET/usr/local/bin/halalfetch
+chmod +x $TARGET/usr/local/bin/uzupdate
 
-arch-chroot /mnt /bin/bash -c "uzupdate --force-installed"
+arch-chroot "$TARGET" /bin/bash -c "uzupdate --force-installed"
 
 echo 'Da.'
 
