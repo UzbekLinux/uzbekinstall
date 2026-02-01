@@ -93,7 +93,9 @@ git clone --depth 1 \
   https://github.com/UzbekLinux/uzbek-refind-theme \
   /mnt/boot/EFI/refind/themes/uzbek
 
-arch-chroot "$TARGET" /bin/bash -c "cat > /boot/EFI/refind.conf <<EOF
+rm /mnt/boot/refind_linux.conf
+
+arch-chroot "$TARGET" /bin/bash -c "cat > /boot/EFI/refind/refind.conf <<EOF
 timeout 20
 use_nvram false
 
