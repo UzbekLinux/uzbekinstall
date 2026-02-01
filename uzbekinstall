@@ -175,7 +175,7 @@ chmod +x /mnt/usr/local/bin/sing-box
 chmod +x /mnt/usr/local/bin/halalfetch
 chmod +x /mnt/usr/local/bin/uzupdate
 
-arch-chroot /mnt /bin/bash -c "uzupdate"
+arch-chroot /mnt /bin/bash -c "uzupdate --force-installed"
 
 echo 'Da.'
 
