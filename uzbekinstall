@@ -99,13 +99,6 @@ arch-chroot "$TARGET" /bin/bash -c "cat > /boot/EFI/refind/refind.conf <<EOF
 timeout 20
 use_nvram false
 
-menuentry \"Uzbek Linux\" {
-    loader /vmlinuz-linux
-    initrd /initramfs-linux.img
-    options \"root=$ROOT_PART rw\"
-    icon /EFI/refind/themes/uzbek/icons/os_uzbek.png
-}
-
 include themes/uzbek/theme.conf
 EOF"
 arch-chroot "$TARGET" /bin/bash -c "mkinitcpio -P"
