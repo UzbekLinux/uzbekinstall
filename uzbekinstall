@@ -15,6 +15,7 @@ get_partitions() {
     fi
 }
 
+umount -R /mnt 2>/dev/null || true
 
 if [[ "$PART_MODE" == "auto" ]]; then
     if [[ ! -b "$DISK" ]] || [[ "${DISK:0:5}" != "/dev/" ]]; then
