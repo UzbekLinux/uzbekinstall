@@ -4,7 +4,7 @@ FS="ext4"
 
 source /tmp/uzbekinstall.conf
 
-TARGET="$TARGET/"
+TARGET="/mnt"
 
 if [ ! -d /sys/firmware/efi ]; then
     echo "система не в uefi!"
