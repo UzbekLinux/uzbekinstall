@@ -87,17 +87,25 @@ arch-chroot "$TARGET" /bin/bash -c "echo -e \"$ROOT_PASSWORD\n$ROOT_PASSWORD\" |
 arch-chroot "$TARGET" /bin/bash -c "mount $EFI_PART /boot"
 arch-chroot "$TARGET" /bin/bash -c "refind-install"
 
-KERNEL_PARAMS="root=$ROOT_PART rw"
-REFIND_CONF="$TARGET/boot/refind_linux.conf"
-KERNELS=$(ls "$TARGET/boot"/vmlinuz-* 2>/dev/null || echo "")
+mkdir -p /mnt/boot/EFI/refind/themes/
 
-> "$REFIND_CONF"
-for KERNEL in $KERNELS; do
-    BASENAME=$(basename "$KERNEL")
-    INITRD="/initramfs-${BASENAME#vmlinuz-}.img"
-    echo "\"Uzbek Linux ($BASENAME)\" \"$KERNEL_PARAMS initrd=$INITRD\"" >> "$REFIND_CONF"
-done
+git clone --depth 1 \
+  https://github.com/UzbekLinux/uzbek-refind-theme \
+  /mnt/boot/EFI/refind/themes/uzbek
 
+arch-chroot "$TARGET" /bin/bash -c "cat > /boot/EFI/refind.conf <<EOF
+timeout 20
+use_nvram false
+
+menuentry \"Uzbek Linux\" {
+    loader /vmlinuz-linux
+    initrd /initramfs-linux.img
+    options \"root=$ROOT_PART rw\"
+    icon /EFI/refind/themes/uzbek/icons/os_uzbek.png
+}
+
+include themes/uzbek/theme.conf
+EOF"
 arch-chroot "$TARGET" /bin/bash -c "mkinitcpio -P"
 
 arch-chroot "$TARGET" /bin/bash -c "pacman -S --noconfirm git python-pip labwc python3 tk swaybg nwg-panel nwg-drawer nwg-menu python-pyqt6 jq --needed"
