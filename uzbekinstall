@@ -134,20 +134,21 @@ arch-chroot /mnt /bin/bash -c "rm /usr/share/wayland-sessions/labwc.desktop"
 echo "Копирование халяль компонентов из LiveCD..."
 
 mkdir -p /mnt/etc/xdg/zde
-arch-chroot /mnt /bin/bash -c "cat > /etc/xdg/zde/config.json <<EOF
+arch-chroot /mnt /bin/bash -c 'cat > /etc/xdg/zde/config.json <<EOF
 {
-	"wallpaper_type": "image",
-	"wallpaper": {
-	    "path": "/usr/share/wallpapers/uzbek-linux-3.png",
-	    "mode": "stretch"
-	},
-	"interface_menu": "drawer",
-	"autostart": [
-		"echo привет как дела"
-	],
-	"session_terminal": "alacritty"
+    "wallpaper_type": "image",
+    "wallpaper": {
+        "path": "/usr/share/wallpapers/uzbek-linux-3.png",
+        "mode": "stretch"
+    },
+    "interface_menu": "drawer",
+    "autostart": [
+        "echo привет как дела"
+    ],
+    "session_terminal": "alacritty"
 }
-EOF"
+EOF'
+
 ln -sf /run/systemd/resolve/stub-resolv.conf /mnt/etc/resolv.conf
 arch-chroot /mnt /bin/bash -c "systemctl enable systemd-resolved uzbeknetwork"
 arch-chroot /mnt /bin/bash -c "systemctl disable systemd-networkd.service"
@@ -174,7 +175,7 @@ chmod +x /mnt/usr/local/bin/sing-box
 chmod +x /mnt/usr/local/bin/halalfetch
 chmod +x /mnt/usr/local/bin/uzupdate
 
-arch-chroot /mnt /bin/bash -c "uzupdate --force-installed"
+arch-chroot /mnt /bin/bash -c "uzupdate"
 
 echo 'Da.'
 
