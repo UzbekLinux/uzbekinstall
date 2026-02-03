@@ -63,7 +63,7 @@ fi
 
 mount "$ROOT_PART" "$TARGET" || { echo -e "Произошла ошибка при монтировании root $ROOT_PART!"; exit 1; }
 mount --mkdir "$EFI_PART" "$TARGET/boot" || { echo -e "Произошла ошибка при монтировании EFI $EFI_PART!"; exit 1; }
-pacstrap -K "$TARGET" base linux linux-firmware refind || { echo -e "Произошла ошибка при установке базовой системы!"; exit 1; }
+pacstrap -K "$TARGET" base linux linux-firmware || { echo -e "Произошла ошибка при установке базовой системы!"; exit 1; }
 genfstab -U "$TARGET" >> $TARGET/etc/fstab
 
 echo 'ставим HALAL время...'
@@ -85,31 +85,68 @@ arch-chroot "$TARGET" /bin/bash -c "echo '$HOSTNAME' > /etc/hostname"
 arch-chroot "$TARGET" /bin/bash -c "echo -e \"$ROOT_PASSWORD\n$ROOT_PASSWORD\" | passwd"
 
 arch-chroot "$TARGET" /bin/bash -c "mount $EFI_PART /boot"
-arch-chroot "$TARGET" /bin/bash -c "refind-install"
+if [ "$BOOTLOADER" = "rEFInd" ]; then
+    arch-chroot "$TARGET" /bin/bash -c "pacman -S --noconfirm refind"
+    arch-chroot "$TARGET" /bin/bash -c "refind-install"
+    
+    mkdir -p /mnt/boot/EFI/refind/themes/
+    
+    git clone --depth 1 \
+      https://github.com/UzbekLinux/uzbek-refind-theme \
+      /mnt/boot/EFI/refind/themes/uzbek
+    
+    KERNEL_PARAMS="root=$ROOT_PART rw"
+    REFIND_CONF="$TARGET/boot/refind_linux.conf"
+    KERNELS=$(ls "$TARGET/boot"/vmlinuz-* 2>/dev/null || echo "")
+    
+    > "$REFIND_CONF"
+    for KERNEL in $KERNELS; do
+        BASENAME=$(basename "$KERNEL")
+        INITRD="/initramfs-${BASENAME#vmlinuz-}.img"
+        echo "\"Uzbek Linux ($BASENAME)\" \"$KERNEL_PARAMS initrd=$INITRD\"" >> "$REFIND_CONF"
+    done
+    
+    arch-chroot "$TARGET" /bin/bash -c "cat > /boot/EFI/refind/refind.conf <<EOF
+    timeout 20
+    use_nvram false
+    
+    include themes/uzbek/theme.conf
+    EOF"
+elif [ "$BOOTLOADER" = "GRUB" ]; then
+    arch-chroot "$TARGET" /bin/bash -c "pacman -S --noconfirm grub"
+    arch-chroot "$TARGET" /bin/bash -c "
+        grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB
+        grub-mkconfig -o /boot/grub/grub.cfg
+    "
+elif [ "$BOOTLOADER" = "Limine" ]; then
+    arch-chroot "$TARGET" /bin/bash -c "pacman -S --noconfirm limine efibootmgr"
+    arch-chroot "$TARGET" /bin/bash -c "
+        mkdir -p /boot/EFI/arch-limine
+        cp /usr/share/limine/BOOTX64.EFI /boot/EFI/arch-limine/
+    "
 
-mkdir -p /mnt/boot/EFI/refind/themes/
+    arch-chroot "$TARGET" /bin/bash -c "
+        efibootmgr \
+          --create \
+          --disk $DISK \
+          --part 1 \
+          --label 'Uzbek Linux' \
+          --loader '\\EFI\\arch-limine\\BOOTX64.EFI' \
+          --unicode
+    "
 
-git clone --depth 1 \
-  https://github.com/UzbekLinux/uzbek-refind-theme \
-  /mnt/boot/EFI/refind/themes/uzbek
+    cat > "$TARGET/boot/EFI/arch-limine/limine.conf" <<EOF
+timeout: 5
 
-KERNEL_PARAMS="root=$ROOT_PART rw"
-REFIND_CONF="$TARGET/boot/refind_linux.conf"
-KERNELS=$(ls "$TARGET/boot"/vmlinuz-* 2>/dev/null || echo "")
-
-> "$REFIND_CONF"
-for KERNEL in $KERNELS; do
-    BASENAME=$(basename "$KERNEL")
-    INITRD="/initramfs-${BASENAME#vmlinuz-}.img"
-    echo "\"Uzbek Linux ($BASENAME)\" \"$KERNEL_PARAMS initrd=$INITRD\"" >> "$REFIND_CONF"
-done
-
-arch-chroot "$TARGET" /bin/bash -c "cat > /boot/EFI/refind/refind.conf <<EOF
-timeout 20
-use_nvram false
-
-include themes/uzbek/theme.conf
-EOF"
+/Uzbek Linux
+    protocol: linux
+    path: boot():/vmlinuz-linux
+    module_path: boot():/initramfs-linux.img
+    cmdline: root=$ROOT_PART rw
+EOF
+else
+    exit 1
+fi
 arch-chroot "$TARGET" /bin/bash -c "mkinitcpio -P"
 
 arch-chroot "$TARGET" /bin/bash -c "pacman -S --noconfirm git python-pip labwc python3 tk swaybg nwg-panel nwg-drawer nwg-menu python-pyqt6 jq --needed"
