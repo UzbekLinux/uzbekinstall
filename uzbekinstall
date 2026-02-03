@@ -154,8 +154,18 @@ arch-chroot "$TARGET" /bin/bash -c "mkdir /tmp"
 arch-chroot "$TARGET" /bin/bash -c "cd /tmp && git clone https://github.com/ZDesktopEnvironment/ZDE && cd ZDE && cp -rfv tree/* /"
 arch-chroot "$TARGET" /bin/bash -c "cd /tmp && git clone https://github.com/ZDesktopEnvironment/ZSysConf && cd ZSysConf && cp -rfv tree/* /"
 
-arch-chroot "$TARGET" /bin/bash -c "pacman -S --noconfirm sddm"
-arch-chroot "$TARGET" /bin/bash -c "systemctl enable sddm.service"
+if [ "$DM" = "SDDM" ]; then
+    arch-chroot "$TARGET" /bin/bash -c "pacman -S --noconfirm sddm"
+    arch-chroot "$TARGET" /bin/bash -c "systemctl enable sddm.service"
+
+elif [ "$DM" = "LightDM" ]; then
+    arch-chroot "$TARGET" /bin/bash -c "pacman -S --noconfirm lightdm lightdm-gtk-greeter"
+    arch-chroot "$TARGET" /bin/bash -c "systemctl enable lightdm.service"
+
+else
+    exit 1
+fi
+
 
 arch-chroot "$TARGET" /bin/bash -c "useradd -m -g users -G wheel,video,audio -s /bin/bash $USERNAME"
 arch-chroot "$TARGET" /bin/bash -c "echo -e \"$USER_PASSWORD\n$USER_PASSWORD\" | passwd $USERNAME"
