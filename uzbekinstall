@@ -113,11 +113,9 @@ if [ "$BOOTLOADER" = "rEFInd" ]; then
     include themes/uzbek/theme.conf
     EOF"
 elif [ "$BOOTLOADER" = "GRUB" ]; then
-    arch-chroot "$TARGET" /bin/bash -c "pacman -S --noconfirm grub"
-    arch-chroot "$TARGET" /bin/bash -c "
-        grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB
-        grub-mkconfig -o /boot/grub/grub.cfg
-    "
+    arch-chroot /mnt /bin/bash -c "pacman -S --noconfirm grub efibootmgr"
+    arch-chroot /mnt /bin/bash -c "grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=GRUB"
+    arch-chroot /mnt /bin/bash -c "grub-mkconfig -o /boot/grub/grub.cfg"
 elif [ "$BOOTLOADER" = "Limine" ]; then
     arch-chroot "$TARGET" /bin/bash -c "pacman -S --noconfirm limine efibootmgr"
     arch-chroot "$TARGET" /bin/bash -c "
