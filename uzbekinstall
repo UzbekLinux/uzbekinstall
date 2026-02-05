@@ -175,13 +175,14 @@ echo 'Установка SPM...'
 arch-chroot "$TARGET" /bin/bash -c "curl -s https://zenusus.serv00.net/dl/installSPM.sh | bash"
 arch-chroot "$TARGET" /bin/bash -c "spm add https://raw.githubusercontent.com/lutit/UzbekGramDesktop/refs/heads/uzbekgram/repo.json"
 arch-chroot "$TARGET" /bin/bash -c "spm add https://msh356.ru/spm/"
+arch-chroot "$TARGET" /bin/bash -c "spm add https://raw.githubusercontent.com/fishcheese/spm-repo/refs/heads/main/repo.json"
 
 echo 'Установка HALAL софт...'
-PACKAGES=("halalIDE" "320totalsecurity" "eblan-editor" "eblan-music-editor" "eblanoffice" "uzbekgram-desktop" "uzbeknetwork")
+PACKAGES=("halalIDE" "320totalsecurity" "eblan-editor" "eblan-music-editor" "eblan-office" "uzbekgram-desktop" "uzbeknetwork")
 
 for pkg in "${PACKAGES[@]}"; do
     arch-chroot $TARGET /bin/bash -c "
-        timeout --signal=SIGKILL 30s bash -c '
+        timeout --signal=SIGKILL 55s bash -c '
             python -m venv /tmp/venv_$pkg &&
             source /tmp/venv_$pkg/bin/activate &&
             spm install $pkg &&
